@@ -137,7 +137,6 @@ export const checkAuth = async (req, res) => {
       return res.status(401).json({ message: 'User not found' });
     }
 
-    // 🛠 Fix for old users without createdAt
     if (!user.createdAt) {
       user.createdAt = new Date();
       await user.save();

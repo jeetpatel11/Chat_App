@@ -42,4 +42,24 @@ export const useChatStore = create((set, get) => ({
       set({ messages: [], isMessagesLoading: false });
     }
   },
+
+  setSelectedUser: (user) => {
+    set({ selectedUser: user });
+  },
+
+  sendMessage : async (messageData)=>{
+    const {selectedUser,messages}  =get();
+
+    try{
+      const res=axiosInstance.post(`/message/send/${selectedUser._id}`,messageData);
+      set({messages:[...messages,res.data]})
+    }
+    catch(e)
+    {
+      console.log(e);
+    }
+  },
+
+
+  
 }));

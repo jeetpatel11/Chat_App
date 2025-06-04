@@ -1,5 +1,5 @@
 import React from 'react'
-import { useAuthStore } from '../store/useAuthstore.js';
+import { useChatStore } from '../store/useChatStore.js';
 import ChatContainer from '../components/ChatContainer.jsx';
 import NoChatSelected from '../components/NoChatSelected.jsx';
 import  Sidebar  from '../components/Sidebar.jsx';
@@ -7,7 +7,7 @@ import  Sidebar  from '../components/Sidebar.jsx';
 
 function HomePage() {
 
-  const {selectedUser}=useAuthStore();
+  const {selectedUser}=useChatStore();
   return (
     <div className="h-screen bg-base-200">
       <div className="flex items-center justify-center pt-20 px-4">
