@@ -131,9 +131,16 @@ export const checkAuth = async (req, res) => {
       return res.status(401).json({ message: 'User not authenticated' });
     }
 
-    const user = await User.findById(req.user._id).select('-password');
+    let user = await User.findById(req.user._id).select('-password');
+
     if (!user) {
       return res.status(401).json({ message: 'User not found' });
+    }
+
+    // 🛠 Fix for old users without createdAt
+    if (!user.createdAt) {
+      user.createdAt = new Date();
+      await user.save();
     }
 
     res.json({ user });
@@ -142,3 +149,4 @@ export const checkAuth = async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 };
+
