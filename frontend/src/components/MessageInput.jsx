@@ -100,7 +100,7 @@ const MessageInput = () => {
         </div>
         <button
           type="submit"
-          className="btn btn-sm btn-circle"
+          className="chat-bubble-primary btn btn-md btn-circle "
           disabled={!text.trim() && !imagePreview}
         >
           <Send size={22} />

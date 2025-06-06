@@ -1,4 +1,3 @@
-// src/components/ChatContainer.jsx
 import { useChatStore } from "../store/useChatStore";
 import { useEffect, useRef } from "react";
 import ChatHeader from "./ChatHeader";
@@ -13,61 +12,163 @@ const ChatContainer = () => {
     isMessagesLoading,
     selectedUser,
   } = useChatStore();
+
   const { authUser } = useAuthStore();
   const messageEndRef = useRef(null);
 
+  // Fetch messages when user is selected
   useEffect(() => {
     if (selectedUser?._id) {
+      console.log('Getting messages for user:', selectedUser._id);
       getMessages(selectedUser._id);
     }
   }, [selectedUser?._id, getMessages]);
 
-  if(isMessagesLoading) return(
-  <div className="flex-1 items-center justify-center text-zinc-500">
-    <ChatHeader/>
+  // Auto scroll to bottom when messages change
+  useEffect(() => {
+    if (messageEndRef.current) {
+      messageEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [messages]);
 
-    <MessageSkeleton/>  
+  // Debug logging
+  useEffect(() => {
+    console.log('Messages in component:', messages);
+    console.log('Messages count:', messages?.length || 0);
+    console.log('Selected user:', selectedUser);
+    console.log('Auth user:', authUser);
+  }, [messages, selectedUser, authUser]);
 
-    <MessageInput/>
-  </div>
-  )
-
+  // Show user selection prompt
   if (!selectedUser) {
     return (
-      <div className="flex-1 flex items-center justify-center text-zinc-500">
-        Select a user to start chatting
+      <div className="flex-1 flex items-center justify-center bg-base-100 ">
+        <div className="text-center p-8">
+          <div className="text-6xl mb-4">💬</div>
+          <h2 className="text-xl font-semibold text-base-content mb-2">
+            Welcome to Chat
+          </h2>
+          <p className="text-base-content/70">
+            Select a user from the sidebar to start chatting
+          </p>
+        </div>
       </div>
     );
   }
 
+  // Show loading state
+  if (isMessagesLoading) {
+    return (
+      <div className="flex-1 flex flex-col bg-base-100">
+        <ChatHeader />
+        <div className="flex-1 bg-base-200">
+          <MessageSkeleton />
+        </div>
+        <MessageInput />
+      </div>
+    );
+  }
+
+  // Main chat interface
   return (
-    <div className="flex-1 flex flex-col overflow-auto">
+    <div className="flex-1 flex flex-col overflow-hidden bg-base-100">
+      {/* Chat Header */}
       <ChatHeader />
 
-      {isMessagesLoading ? (
-        <div className="p-4 text-center text-zinc-500">Loading...</div>
-      ) : (
-        <div className="flex-1 overflow-y-auto p-4">
-          {messages
-  .filter((msg) => msg && msg.senderId && msg.text)
-  .map((msg, i) => (
-    <div key={i} className="mb-2 flex justify-start">
-      <div
-        className={`p-2 rounded-md max-w-xs break-words ${
-          msg.senderId === authUser._id
-            ? "bg-blue-200 ml-auto"
-            : "bg-gray-200 mr-auto"
-        }`}
-      >
-        {msg.text}
+      {/* Messages Area */}
+      <div className="flex-1 overflow-y-auto px-4 mr-7 space-y-4 bg-base-200 custom-scrollbar">
+
+        {messages && messages.length > 0 ? (
+          messages.map((msg) => {
+            // Skip invalid messages
+            if (!msg || !msg._id) {
+              console.warn('Invalid message object:', msg);
+              return null;
+            }
+
+            const isSender = msg.senderId === authUser?._id;
+            const avatar = isSender
+              ? authUser?.profilepic || "/avatar.png"
+              : selectedUser?.profilepic || "/avatar.png";
+
+            return (
+              <div 
+                key={msg._id} 
+                className={`chat ${isSender ? "chat-end" : "chat-start"}`}
+              >
+                {/* User Avatar */}
+                <div className="chat-image avatar">
+                  <div className="w-10 h-10 rounded-full border-2 border-base-300 overflow-hidden">
+                    <img 
+                      src={avatar} 
+                      alt="User avatar"
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                </div>
+
+                {/* Message Bubble */}
+                <div className={`chat-bubble max-w-xs lg:max-w-md ${
+                  isSender 
+                    ? 'chat-bubble-primary text-warning-content' 
+                    : 'bg-base-300 text-base-content'
+                }`}>
+                  {/* Text Message */}
+                  {msg.text && (
+                    <p className="break-words whitespace-pre-wrap">
+                      {msg.text}
+                    </p>
+                  )}
+                  
+                  {/* Image Message */}
+                  {msg.image && (
+                    <div className="mt-2 ">
+                      <img
+                        src={msg.image}
+                        alt="Shared image"
+                        className="max-w-full rounded-lg border border-base-300 cursor-pointer hover:opacity-90 transition-opacity"
+                        onClick={() => window.open(msg.image, '_blank')}
+                      />
+                    </div>
+                  )}
+                </div>
+
+                {/* Message Timestamp */}
+                <div className="chat-footer opacity-50 text-xs text-base-content mt-1">
+                  {msg.createdAt ? (
+                    <time dateTime={msg.createdAt}>
+                      {new Date(msg.createdAt).toLocaleTimeString([], {
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
+                    </time>
+                  ) : (
+                    <span>No timestamp</span>
+                  )}
+                </div>
+              </div>
+            );
+          })
+        ) : (
+          // Empty State
+          <div className="flex-1 flex items-center justify-center">
+            <div className="text-center p-8">
+              <div className="text-6xl mb-4">🗨️</div>
+              <h3 className="text-lg font-semibold text-base-content mb-2">
+                No messages yet
+              </h3>
+              <p className="text-sm text-base-content/60">
+                Be the first to send a message to {selectedUser?.fullName || selectedUser?.username || 'this user'}!
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Auto-scroll anchor */}
+        <div ref={messageEndRef} />
       </div>
-    </div>
-))}
 
-          <div ref={messageEndRef} />
-        </div>
-      )}
-
+      {/* Message Input */}
       <MessageInput />
     </div>
   );

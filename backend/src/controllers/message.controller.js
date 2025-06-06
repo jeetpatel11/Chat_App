@@ -31,25 +31,23 @@ export const getUsersForSidebar = async (req, res) => {
 
 export const getMessages = async (req, res) => {
     try {
-        const {id:UserToChatId} = req.params;
-        const senderId=req.user._id;
+        const { id: userToChatId } = req.params;
+        const senderId = req.user._id;
 
         const messages = await Message.find({
             $or: [
-                { senderId: senderId, receiverId: UserToChatId },
-                { senderId: UserToChatId, receiverId: senderId },
-            ],
-            senderId,
-            UserToChatId,
+                { senderId: senderId, receiverId: userToChatId },
+                { senderId: userToChatId, receiverId: senderId },
+            ]
         }).sort({ createdAt: 1 });
 
         res.status(200).json(messages);
-    }
-    catch (error) {
+    } catch (error) {
         res.status(500).json({ message: error.message });
         console.log(error);
     }
-}
+};
+
 
 export const sendMessage = async (req, res) => {
     try {
