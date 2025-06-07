@@ -9,6 +9,10 @@ import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import express from 'express'
 import { server,app, io } from './lib/socket.js';
+import path from 'path';
+
+
+
 
 
 app.use(cookieParser()); // Use only once
@@ -17,6 +21,17 @@ app.use(cors({
   credentials: true,
 }));
 app.set('io', io);
+
+
+
+const __dirname = path.resolve();
+if (process.env.NODE_ENV === 'production') {
+  app.use(express.static(path.join(__dirname, '/frontend/dist')));
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, '/frontend/dist/index.html'));
+  });
+}
+
 
 // Handle large payloads
 app.use(express.json({ limit: '10mb' }));
