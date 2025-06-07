@@ -1,6 +1,5 @@
 import User from '../models/user.model.js';
 import Message from '../models/message.model.js';
-import Conversation from '../models/conversation.model.js'; // Import Conversation model
 import { v2 as cloudinary } from 'cloudinary';
 import dotenv from 'dotenv';
 
@@ -32,17 +31,11 @@ export const getMessages = async (req, res) => {
     const { id: userToChatId } = req.params;
     const senderId = req.user._id;
 
-    // Find the conversation between the two users
-    const conversation = await Conversation.findOne({
-      participants: { $all: [senderId, userToChatId] },
-    });
-
-    if (!conversation) {
-      return res.status(200).json([]); // No conversation yet, return empty array
-    }
-
     const messages = await Message.find({
-      conversationId: conversation._id,
+      $or: [
+        { senderId: senderId, receiverId: userToChatId },
+        { senderId: userToChatId, receiverId: senderId },
+      ],
     })
       .sort({ createdAt: 1 })
       .populate("senderId receiverId", "username"); // Populate sender and receiver details
@@ -66,22 +59,16 @@ export const sendMessage = async (req, res) => {
       return res.status(404).json({ message: "Receiver not found" });
     }
 
-    // Find or create a conversation between the sender and receiver
-    let conversation = await Conversation.findOne({
-      participants: { $all: [senderId, receiverId] },
-    });
-
-    if (!conversation) {
-      conversation = new Conversation({
-        participants: [senderId, receiverId],
-      });
-      await conversation.save();
-    }
+    // Create a unique room ID for this chat (sorted senderId and receiverId to ensure consistency)
+    const participants = [senderId.toString(), receiverId.toString()].sort();
+    const roomId = participants.join('-'); // e.g., "user1Id-user2Id"
 
     // Check for duplicate messages within the last 1 second
     const recentMessage = await Message.findOne({
-      conversationId: conversation._id,
-      senderId,
+      $or: [
+        { senderId: senderId, receiverId: receiverId },
+        { senderId: receiverId, receiverId: senderId },
+      ],
       text: text || "",
       image: image || null,
       createdAt: { $gte: new Date(Date.now() - 1000) },
@@ -103,7 +90,6 @@ export const sendMessage = async (req, res) => {
 
     // Create new message
     const newMessage = new Message({
-      conversationId: conversation._id,
       senderId,
       receiverId,
       text: text || "",
@@ -115,10 +101,9 @@ export const sendMessage = async (req, res) => {
     // Populate sender and receiver details for the response
     await newMessage.populate("senderId receiverId", "username");
 
-    // Emit the message via Socket.IO to the conversation room
+    // Emit the message via Socket.IO to the chat room
     const io = req.app.get("io");
     if (io) {
-      const roomId = conversation._id.toString();
       io.to(roomId).emit("newMessage", newMessage);
       console.log(`Emitted newMessage to room ${roomId}:`, newMessage);
     } else {
