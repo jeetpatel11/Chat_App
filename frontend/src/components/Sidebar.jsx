@@ -21,6 +21,12 @@ const Sidebar = () => {
     getUser();
   }, [getUser]);
 
+
+  useEffect(() => {
+  console.log("👥 Online Users (from Zustand store):", onlineUsers);
+}, [onlineUsers]);
+
+
   const filteredUsers = showOnlineOnly
     ? users.filter((user) => onlineUsers.includes(user._id))
     : users;

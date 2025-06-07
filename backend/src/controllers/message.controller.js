@@ -71,6 +71,17 @@ export const sendMessage = async (req, res) => {
 
         await newMessage.save();
 
+
+          const io = req.app.get("io"); // You must have set this in app.js or server.js
+
+    // ✅ Emit the message to the receiver's room
+    if (io) {
+      io.to(receiverId.toString()).emit("newMessage", newMessage);
+      io.to(senderId.toString()).emit("newMessage", newMessage); // optional: to update sender too
+    } else {
+      console.warn("Socket.io instance not found");
+    }
+
         res.status(200).json(newMessage);
     }
     catch (error) {

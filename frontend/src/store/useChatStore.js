@@ -1,6 +1,8 @@
 import { create } from 'zustand';
 import toast from 'react-hot-toast';
 import { axiosInstance } from '../lib/axios';
+import { useAuthStore } from './useAuthstore';
+
 
 export const useChatStore = create((set, get) => ({
   messages: [],
@@ -14,7 +16,6 @@ export const useChatStore = create((set, get) => ({
     set({ isUserLoading: true });
     try {
       const response = await axiosInstance.get('/message/users');
-      console.log('Users API response:', response.data);
       const users = Array.isArray(response.data) ? response.data : [];
       set({ users, isUserLoading: false });
     } catch (error) {
@@ -29,7 +30,6 @@ export const useChatStore = create((set, get) => ({
     set({ isMessagesLoading: true });
     try {
       const response = await axiosInstance.get(`/message/${userId}`);
-      console.log('Messages API response:', response.data);
       
       // Handle different possible response structures
       let messages = [];
@@ -43,7 +43,6 @@ export const useChatStore = create((set, get) => ({
         console.warn('Unexpected API response structure:', response.data);
       }
       
-      console.log('Setting messages to state:', messages);
       set({ messages, isMessagesLoading: false });
     } catch (error) {
       console.error('Error fetching messages:', error);
@@ -54,7 +53,6 @@ export const useChatStore = create((set, get) => ({
   },
 
   setSelectedUser: (user) => {
-    console.log('Setting selected user:', user);
     set({ selectedUser: user });
   },
 
@@ -89,4 +87,37 @@ export const useChatStore = create((set, get) => ({
       throw error;
     }
   },
+
+
+  
+
+ subscribeToMessages: () => {
+  const socket = useAuthStore.getState().socket;
+  const { selectedUser } = get();
+  const authUser = useAuthStore.getState().authUser;
+
+  if (!socket || !selectedUser || !authUser) {
+    return console.warn("Socket, selectedUser, or authUser not available");
+  }
+
+  socket.on("newMessage", (newMessage) => {
+    const isRelevant =
+      (newMessage.senderId === selectedUser._id && newMessage.receiverId === authUser._id) ||
+      (newMessage.receiverId === selectedUser._id && newMessage.senderId === authUser._id);
+
+    if (!isRelevant) return;
+
+    set((state) => ({
+      messages: [...state.messages, newMessage],
+    }));
+  });
+},
+
+  unsubscribeFromMessages: () => {
+    const socket = useAuthStore.getState().socket;
+    socket.off("newMessage");
+  },
+
+
+
 }));

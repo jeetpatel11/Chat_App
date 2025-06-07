@@ -8,7 +8,7 @@ import connect from './lib/db.js';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import express from 'express'
-import { server,app } from './lib/socket.js';
+import { server,app, io } from './lib/socket.js';
 
 
 app.use(cookieParser()); // Use only once
@@ -16,7 +16,7 @@ app.use(cors({
   origin: 'http://localhost:5173',
   credentials: true,
 }));
-
+app.set('io', io);
 
 // Handle large payloads
 app.use(express.json({ limit: '10mb' }));

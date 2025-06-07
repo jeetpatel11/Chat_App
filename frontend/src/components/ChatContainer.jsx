@@ -11,6 +11,9 @@ const ChatContainer = () => {
     getMessages,
     isMessagesLoading,
     selectedUser,
+    subscribeToMessages,
+    setSelectedUser,
+    unsubscribeFromMessages,
   } = useChatStore();
 
   const { authUser } = useAuthStore();
@@ -19,10 +22,18 @@ const ChatContainer = () => {
   // Fetch messages when user is selected
   useEffect(() => {
     if (selectedUser?._id) {
-      console.log('Getting messages for user:', selectedUser._id);
       getMessages(selectedUser._id);
+      subscribeToMessages();
+
+      return () => {
+        console.log('Unsubscribing from messages for user:', selectedUser._id);
+        unsubscribeFromMessages();
+      }
     }
-  }, [selectedUser?._id, getMessages]);
+  }, [selectedUser?._id, getMessages,subscribeToMessages, unsubscribeFromMessages]);
+
+
+
 
   // Auto scroll to bottom when messages change
   useEffect(() => {
@@ -32,12 +43,7 @@ const ChatContainer = () => {
   }, [messages]);
 
   // Debug logging
-  useEffect(() => {
-    console.log('Messages in component:', messages);
-    console.log('Messages count:', messages?.length || 0);
-    console.log('Selected user:', selectedUser);
-    console.log('Auth user:', authUser);
-  }, [messages, selectedUser, authUser]);
+ 
 
   // Show user selection prompt
   if (!selectedUser) {
@@ -110,7 +116,7 @@ const ChatContainer = () => {
                 {/* Message Bubble */}
                 <div className={`chat-bubble max-w-xs lg:max-w-md ${
                   isSender 
-                    ? 'chat-bubble-primary text-warning-content' 
+                    ? 'chat-bubble-primary text-primary-content' 
                     : 'bg-base-300 text-base-content'
                 }`}>
                   {/* Text Message */}

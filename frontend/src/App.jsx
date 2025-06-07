@@ -1,5 +1,5 @@
 // src/App.jsx
-import { useEffect } from 'react';
+import { use, useEffect } from 'react';
 import Navbar from './components/Navbar';
 import SettingPage from './pages/SettingPage';
 import HomePage from './pages/HomePage';
@@ -13,8 +13,12 @@ import { Toaster } from 'react-hot-toast';
 import { useThemeStore } from './store/useThemeStore';
 
 function App() {
-  const { authUser, checkAuth, isCheckingAuth } = useAuthStore();
-  const { theme } = useThemeStore(); // Fix: Use 'theme' (lowercase)
+  const { authUser, checkAuth, isCheckingAuth ,socket} = useAuthStore();
+  const { messages, messageEndRef } = useAuthStore(); 
+  const { theme } = useThemeStore(); 
+
+
+
 
   useEffect(() => {
     checkAuth();
@@ -22,6 +26,22 @@ function App() {
 
   // Remove or comment out to reduce noise
   // console.log({ authUser, isCheckingAuth });
+
+
+useEffect(() => {
+  if (authUser && socket) {
+    socket.emit("join", authUser._id);
+  }
+}, [authUser, socket]);
+
+
+   useEffect(() => {
+    if (messageEndRef && messageEndRef.current) {
+      messageEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [messages]);
+
+
 
   useEffect(() => {
     console.log('Applying theme to document:', theme); 

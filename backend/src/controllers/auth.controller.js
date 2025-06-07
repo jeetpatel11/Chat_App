@@ -130,6 +130,7 @@ export const checkAuth = async (req, res) => {
     if (!req.user || !req.user._id) {
       return res.status(401).json({ message: 'User not authenticated' });
     }
+    
 
     let user = await User.findById(req.user._id).select('-password');
 

@@ -2,6 +2,8 @@ import { Server } from "socket.io";
 import http from "http";
 import express from "express";
 
+const userSocketMap = {}; // Add this line at the top
+  
 
 const app=express();
 const server = http.createServer(app);
@@ -15,10 +17,17 @@ const io = new Server(server, {
 
 
 io.on("connection", (socket) => {
+  console.log("Socket connected from client side:", socket.id);
   console.log("A user connected", socket.id);
 
   const userId = socket.handshake.query.userId;
   if (userId) userSocketMap[userId] = socket.id;
+
+  socket.on("join", (userId) => {
+    socket.join(userId);
+    console.log(`User ${userId} joined room`);
+  });
+
 
   // io.emit() is used to send events to all the connected clients
   io.emit("getOnlineUsers", Object.keys(userSocketMap));
