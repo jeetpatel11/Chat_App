@@ -14,7 +14,7 @@
   "keywords": ["chat", "react", "node", "express"],
   "author": "",
   "license": "ISC",
-  "devDependencies": {
+  "dependencies": {
     "concurrently": "^9.1.2"
   }
 }
