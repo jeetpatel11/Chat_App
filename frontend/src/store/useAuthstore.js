@@ -142,7 +142,8 @@ export const useAuthStore = create((set, get) => ({
     const { authUser } = get();
     if (!authUser || get().socket?.connected) return;
 
-   const socket = io("https://chat-backend-xyz.onrender.com", { // Replace with your actual Render backend URL
+  const socket = io(import.meta.env.VITE_BACKEND_URL, {
+
   query: {
     userId: authUser._id,
   },
