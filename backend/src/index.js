@@ -17,9 +17,10 @@ import path from 'path';
 
 app.use(cookieParser()); // Use only once
 app.use(cors({
-  origin: 'http://localhost:5173',
+  origin: ["http://localhost:5173", "http://3.110.191.24:5173"],
   credentials: true,
 }));
+
 app.set('io', io);
 
 
