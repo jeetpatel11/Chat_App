@@ -13,23 +13,28 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
+      - name: Use Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 18
 
-      - name: Install root dependencies
-        run: npm install
-
-      - name: Build frontend & install backend
-        run: npm run build
-
-      - name: Stop old app (if running)
+      - name: Install Backend Dependencies
         run: |
-          pm2 stop mern-app || true
-          pm2 delete mern-app || true
+          cd backend
+          npm install
 
-      - name: Start application
+      - name: Install Frontend Dependencies
         run: |
-          pm2 start npm --name "mern-app" -- start
+          cd frontend
+          npm install
+
+      - name: Build Frontend
+        run: |
+          cd frontend
+          npm run build
+
+      - name: Restart Backend with PM2
+        run: |
+          pm2 delete chat-backend || true
+          pm2 start backend/index.js --name chat-backend
           pm2 save
