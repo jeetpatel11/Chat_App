@@ -142,11 +142,14 @@ export const useAuthStore = create((set, get) => ({
     const { authUser } = get();
     if (!authUser || get().socket?.connected) return;
 
-    const socket = io("http://localhost:5001", {
-      query: {
-        userId: authUser._id,
-      },
-    });
+  const socket = io(import.meta.env.VITE_BACKEND_URL, {
+
+  query: {
+    userId: authUser._id,
+  },
+  transports: ["websocket"], // Important for Render
+  withCredentials: true,
+});
     socket.connect();
 
     set({ socket: socket });

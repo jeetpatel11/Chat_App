@@ -3,7 +3,6 @@ import toast from 'react-hot-toast';
 import { axiosInstance } from '../lib/axios';
 import { useAuthStore } from './useAuthstore';
 
-
 export const useChatStore = create((set, get) => ({
   messages: [],
   users: [],
@@ -31,13 +30,10 @@ export const useChatStore = create((set, get) => ({
     try {
       const response = await axiosInstance.get(`/message/${userId}`);
       
-      // Handle different possible response structures
       let messages = [];
       if (Array.isArray(response.data)) {
-        // API returns array directly
         messages = response.data;
       } else if (response.data && Array.isArray(response.data.messages)) {
-        // API returns {messages: [...]}
         messages = response.data.messages;
       } else {
         console.warn('Unexpected API response structure:', response.data);
@@ -68,17 +64,23 @@ export const useChatStore = create((set, get) => ({
 
     try {
       console.log('Sending message:', messageData);
-      // This was the main issue - missing await!
       const response = await axiosInstance.post(`/message/send/${selectedUser._id}`, messageData);
       console.log('Send message response:', response.data);
+
+      // Check if the message already exists to prevent duplicates
+      const newMessage = response.data;
+      const messageExists = messages.some((msg) => msg._id === newMessage._id);
+      if (!messageExists) {
+        set({ 
+          messages: [...messages, newMessage],
+          isSendingMessage: false 
+        });
+      } else {
+        console.warn('Duplicate message detected on frontend:', newMessage);
+        set({ isSendingMessage: false });
+      }
       
-      // Add the new message to the existing messages
-      set({ 
-        messages: [...messages, response.data],
-        isSendingMessage: false 
-      });
-      
-      return response.data;
+      return newMessage;
     } catch (error) {
       console.error('Error sending message:', error);
       const errorMessage = error.response?.data?.message || 'Failed to send message';
@@ -88,36 +90,42 @@ export const useChatStore = create((set, get) => ({
     }
   },
 
+  subscribeToMessages: () => {
+    const socket = useAuthStore.getState().socket;
+    const { selectedUser } = get();
+    const authUser = useAuthStore.getState().authUser;
 
-  
+    if (!socket || !selectedUser || !authUser) {
+      return console.warn("Socket, selectedUser, or authUser not available");
+    }
 
- subscribeToMessages: () => {
-  const socket = useAuthStore.getState().socket;
-  const { selectedUser } = get();
-  const authUser = useAuthStore.getState().authUser;
+    socket.off("newMessage"); // Remove previous listeners to prevent duplicates
+    socket.on("newMessage", (newMessage) => {
+      console.log("Received newMessage:", newMessage);
+      const isRelevant =
+        (newMessage.senderId === selectedUser._id && newMessage.receiverId === authUser._id) ||
+        (newMessage.receiverId === selectedUser._id && newMessage.senderId === authUser._id);
 
-  if (!socket || !selectedUser || !authUser) {
-    return console.warn("Socket, selectedUser, or authUser not available");
-  }
+      if (!isRelevant) return;
 
-  socket.on("newMessage", (newMessage) => {
-    const isRelevant =
-      (newMessage.senderId === selectedUser._id && newMessage.receiverId === authUser._id) ||
-      (newMessage.receiverId === selectedUser._id && newMessage.senderId === authUser._id);
-
-    if (!isRelevant) return;
-
-    set((state) => ({
-      messages: [...state.messages, newMessage],
-    }));
-  });
-},
+      set((state) => {
+        // Prevent duplicates by checking _id
+        const messageExists = state.messages.some((msg) => msg._id === newMessage._id);
+        if (messageExists) {
+          console.warn('Duplicate message received via socket:', newMessage);
+          return state;
+        }
+        return {
+          messages: [...state.messages, newMessage],
+        };
+      });
+    });
+  },
 
   unsubscribeFromMessages: () => {
     const socket = useAuthStore.getState().socket;
-    socket.off("newMessage");
+    if (socket) {
+      socket.off("newMessage");
+    }
   },
-
-
-
 }));
