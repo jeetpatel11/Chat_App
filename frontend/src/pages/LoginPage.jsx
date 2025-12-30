@@ -62,7 +62,7 @@ function LoginPage() {
                 />
               </div>
             </div>
-
+    <h1>LEVOOOOOOOOOOOOOOOOOO</h1>
             <div className="form-control">
               <label className="label">
                 <span className="label-text font-medium flex"><Lock className="size-5 text-base-content/40 mr-2" />Password</span>
