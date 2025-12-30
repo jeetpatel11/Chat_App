@@ -1,0 +1,35 @@
+name: Deploy MERN App
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Install root dependencies
+        run: npm install
+
+      - name: Build frontend & install backend
+        run: npm run build
+
+      - name: Stop old app (if running)
+        run: |
+          pm2 stop mern-app || true
+          pm2 delete mern-app || true
+
+      - name: Start application
+        run: |
+          pm2 start npm --name "mern-app" -- start
+          pm2 save
