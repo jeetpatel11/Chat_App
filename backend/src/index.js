@@ -14,7 +14,10 @@ app.use(cookieParser());
 app.use(cors({
   origin: [
     "http://localhost:5173",
-    "https://chatty-fj4v.onrender.com" // Add your deployed domain here
+    "https://chatty-fj4v.onrender.com" // Add your deployed domain here,
+    ,
+    "http://13.205.7.6:5173",
+    "http://13.205.7.6"
   ],
   credentials: true,
 }));
